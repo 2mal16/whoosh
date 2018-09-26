@@ -26,6 +26,7 @@
 # policies, either expressed or implied, of Matt Chaput.
 
 import copy
+import functools
 
 from whoosh import query
 from whoosh.compat import u
@@ -510,6 +511,9 @@ class FuzzyTermPlugin(TaggingPlugin):
             self.endchar = wordnode.endchar
             self.maxdist = maxdist
             self.prefixlength = prefixlength
+            # Set FuzzyTerm-specific attributes
+            self.qclass = functools.partial(self.qclass, maxdist=maxdist,
+                                            prefixlength=prefixlength)
 
         def r(self):
             return "%r ~%d/%d" % (self.text, self.maxdist, self.prefixlength)
@@ -519,9 +523,6 @@ class FuzzyTermPlugin(TaggingPlugin):
             # (it looks at self.qclass), just because it takes care of some
             # extra checks and attributes
             q = syntax.TextNode.query(self, parser)
-            # Set FuzzyTerm-specific attributes
-            q.maxdist = self.maxdist
-            q.prefixlength = self.prefixlength
             return q
 
     def create(self, parser, match):

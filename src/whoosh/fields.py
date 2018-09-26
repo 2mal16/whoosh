@@ -257,7 +257,7 @@ class FieldType(object):
 
         return False
 
-    def parse_query(self, fieldname, qstring, boost=1.0):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
         """
         When ``self_parsing()`` returns True, the query parser will call
         this method to parse basic query text.
@@ -424,8 +424,8 @@ class FieldWrapper(FieldType):
     def self_parsing(self):
         return self.subfield.self_parsing()
 
-    def parse_query(self, fieldname, qstring, boost=1.0):
-        return self.subfield.parse_query(fieldname, qstring, boost)
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
+        return self.subfield.parse_query(fieldname, qstring, boost, termclass)
 
     def parse_range(self, fieldname, start, end, startexcl, endexcl, boost=1.0):
         self.subfield.parse_range(fieldname, start, end, startexcl, endexcl,
@@ -739,9 +739,10 @@ class NUMERIC(FieldType):
     def self_parsing(self):
         return True
 
-    def parse_query(self, fieldname, qstring, boost=1.0):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
         from whoosh import query
         from whoosh.qparser.common import QueryParserError
+        termclass = termclass or query.Term
 
         if qstring == "*":
             return query.Every(fieldname, boost=boost)
@@ -750,7 +751,7 @@ class NUMERIC(FieldType):
             raise QueryParserError("%r is not a valid number" % qstring)
 
         token = self.to_bytes(qstring)
-        return query.Term(fieldname, token, boost=boost)
+        return termclass(fieldname, token, boost=boost)
 
     def parse_range(self, fieldname, start, end, startexcl, endexcl,
                     boost=1.0):
@@ -871,9 +872,10 @@ class DATETIME(NUMERIC):
             raise Exception("%r is not a parseable date" % qstring)
         return at
 
-    def parse_query(self, fieldname, qstring, boost=1.0):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
         from whoosh import query
         from whoosh.util.times import is_ambiguous
+        termclass = termclass or query.Term
 
         try:
             at = self._parse_datestring(qstring)
@@ -886,7 +888,7 @@ class DATETIME(NUMERIC):
             endnum = datetime_to_long(at.ceil())
             return query.NumericRange(fieldname, startnum, endnum)
         else:
-            return query.Term(fieldname, at, boost=boost)
+            return termclass(fieldname, at, boost=boost)
 
     def parse_range(self, fieldname, start, end, startexcl, endexcl,
                     boost=1.0):
@@ -966,13 +968,14 @@ class BOOLEAN(FieldType):
     def self_parsing(self):
         return True
 
-    def parse_query(self, fieldname, qstring, boost=1.0):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
         from whoosh import query
+        termclass = termclass or query.Term
 
         if qstring == "*":
             return query.Every(fieldname, boost=boost)
 
-        return query.Term(fieldname, self._obj_to_bool(qstring), boost=boost)
+        return termclass(fieldname, self._obj_to_bool(qstring), boost=boost)
 
 
 class STORED(FieldType):
@@ -1217,10 +1220,11 @@ class NGRAM(FieldType):
     def self_parsing(self):
         return True
 
-    def parse_query(self, fieldname, qstring, boost=1.0):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
         from whoosh import query
+        termclass = termclass or query.Term
 
-        terms = [query.Term(fieldname, g)
+        terms = [termclass(fieldname, g)
                  for g in self.process_text(qstring, mode='query')]
         cls = query.Or if self.queryor else query.And
 

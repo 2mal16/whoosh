@@ -213,7 +213,8 @@ class QueryParser(object):
             # and return early
             if field.self_parsing():
                 try:
-                    q = field.parse_query(fieldname, text, boost=boost)
+                    q = field.parse_query(fieldname, text, boost=boost,
+                                          termclass=termclass)
                     return q
                 except:
                     e = sys.exc_info()[1]
