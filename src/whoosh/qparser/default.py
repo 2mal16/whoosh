@@ -214,7 +214,9 @@ class QueryParser(object):
             if field.self_parsing():
                 try:
                     q = field.parse_query(fieldname, text, boost=boost,
-                                          termclass=termclass)
+                                          termclass=termclass,
+                                          tokenize=tokenize,
+                                          removestops=removestops)
                     return q
                 except:
                     e = sys.exc_info()[1]

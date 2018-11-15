@@ -257,7 +257,7 @@ class FieldType(object):
 
         return False
 
-    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None, **kwargs):
         """
         When ``self_parsing()`` returns True, the query parser will call
         this method to parse basic query text.
@@ -424,8 +424,8 @@ class FieldWrapper(FieldType):
     def self_parsing(self):
         return self.subfield.self_parsing()
 
-    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
-        return self.subfield.parse_query(fieldname, qstring, boost, termclass)
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None, **kwargs):
+        return self.subfield.parse_query(fieldname, qstring, boost, termclass, **kwargs)
 
     def parse_range(self, fieldname, start, end, startexcl, endexcl, boost=1.0):
         self.subfield.parse_range(fieldname, start, end, startexcl, endexcl,
@@ -739,7 +739,7 @@ class NUMERIC(FieldType):
     def self_parsing(self):
         return True
 
-    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None, **kwargs):
         from whoosh import query
         from whoosh.qparser.common import QueryParserError
         termclass = termclass or query.Term
@@ -872,7 +872,7 @@ class DATETIME(NUMERIC):
             raise Exception("%r is not a parseable date" % qstring)
         return at
 
-    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None, **kwargs):
         from whoosh import query
         from whoosh.util.times import is_ambiguous
         termclass = termclass or query.Term
@@ -968,7 +968,7 @@ class BOOLEAN(FieldType):
     def self_parsing(self):
         return True
 
-    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None, **kwargs):
         from whoosh import query
         termclass = termclass or query.Term
 
@@ -1220,12 +1220,12 @@ class NGRAM(FieldType):
     def self_parsing(self):
         return True
 
-    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None):
+    def parse_query(self, fieldname, qstring, boost=1.0, termclass=None, **kwargs):
         from whoosh import query
         termclass = termclass or query.Term
 
         terms = [termclass(fieldname, g)
-                 for g in self.process_text(qstring, mode='query')]
+                 for g in self.process_text(qstring, mode='query', **kwargs)]
         cls = query.Or if self.queryor else query.And
 
         return cls(terms, boost=boost)
